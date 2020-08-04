@@ -3,6 +3,7 @@ import argparse
 import logging
 import re
 import sys
+from functools import reduce
 
 from redmine_gitlab_migrator.redmine import RedmineProject, RedmineClient
 from redmine_gitlab_migrator.gitlab import GitlabProject, GitlabClient
@@ -130,6 +131,8 @@ def parse_args():
         default=None,
         help="if account doesn't exists in GitLab use this account as default")
 
+    parser_issues.add_argument('--filter', required=False, help='Filter on Redmine fields. Format key=value,nested.key2=value2')
+
     parser_pages.add_argument(
         '--gitlab-wiki',
         required=True,
@@ -236,6 +239,18 @@ def perform_migrate_issues(args):
     issues = redmine_project.get_all_issues()
     if args.initial_id:
         issues = [issue for issue in issues if int(args.initial_id) <= issue['id']]
+
+    if args.filter:
+        filters = args.filter.split(",")
+        filters = [filter.split("=") for filter in filters]
+        filters = [[field.split("."), value] for field, value in filters]
+        issues = [issue for issue in issues
+            if all(
+                reduce(
+                    lambda object, key: object.get(key) if object is not None else None,
+                    field,
+                    issue
+                ) == value for field, value in filters)]
 
     # convert issues
     log.info('Converting issues')
