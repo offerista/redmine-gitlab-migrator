@@ -174,8 +174,11 @@ class GitlabProject(Project):
             log.error("Can't convert issue due to error: {}".format(e.response.content))
             exit()
 
-
         issue_url = '{}/{}'.format(issues_url, issue['iid'])
+
+        # Handle label for non project member creating issue
+        if len(issue['labels']) == 0 and data.get('labels') is not None and len(data['labels']) != 0:
+            self.api.put(issue_url, {'add_labels': data['labels']})
 
         # Handle issues notes
         issue_notes_url = '{}/notes'.format(issue_url, 'notes')
