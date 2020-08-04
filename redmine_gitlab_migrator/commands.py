@@ -133,6 +133,8 @@ def parse_args():
 
     parser_issues.add_argument('--filter', required=False, help='Filter on Redmine fields. Format key=value,nested.key2=value2')
 
+    parser_roadmap.add_argument('--filter', required=False, help='Filter on name. Provide a regular expression')
+
     parser_pages.add_argument(
         '--gitlab-wiki',
         required=True,
@@ -389,6 +391,9 @@ def perform_migrate_roadmap(args):
             gitlab_project=gitlab_project)
 
     versions = redmine_project.get_versions()
+    if args.filter:
+        name_filter = re.compile(args.filter)
+        versions = [version for version in versions if name_filter.match(version['name'])]
     versions_data = (convert_version(i) for i in versions)
 
     for data, meta in versions_data:
