@@ -171,8 +171,13 @@ class GitlabProject(Project):
             issue = self.api.post(
                 issues_url, data=data, headers=headers)
         except requests.exceptions.HTTPError as e:
-            log.error("Can't convert issue due to error: {}".format(e.response.content))
-            exit()
+            if data.get('assignee_id') is not None:
+                del data['assignee_id']
+                issue = self.api.post(
+                    issues_url, data=data, headers=headers)
+            else:
+                log.error("Can't convert issue due to error: {}".format(e.response.content))
+                exit()
 
         issue_url = '{}/{}'.format(issues_url, issue['iid'])
 
