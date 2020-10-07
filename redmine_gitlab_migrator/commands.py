@@ -131,7 +131,7 @@ def parse_args():
         default=None,
         help="if account doesn't exists in GitLab use this account as default")
 
-    parser_issues.add_argument('--filter', required=False, help='Filter on Redmine fields. Format key=value,nested.key2=value2')
+    parser_issues.add_argument('--filter', required=False, help='Filter on Redmine fields. Format key=value,nested.key2=value2. Values are interpreted as regular expressions.')
 
     parser_roadmap.add_argument('--filter', required=False, help='Filter on name. Provide a regular expression')
 
@@ -245,14 +245,14 @@ def perform_migrate_issues(args):
     if args.filter:
         filters = args.filter.split(",")
         filters = [filter.split("=") for filter in filters]
-        filters = [[field.split("."), value] for field, value in filters]
+        filters = [[field.split("."), re.compile(value)] for field, value in filters]
         issues = [issue for issue in issues
             if all(
-                reduce(
+                value.match(reduce(
                     lambda object, key: object.get(key) if object is not None else None,
                     field,
                     issue
-                ) == value for field, value in filters)]
+                )) for field, value in filters)]
 
     # convert issues
     log.info('Converting issues')
