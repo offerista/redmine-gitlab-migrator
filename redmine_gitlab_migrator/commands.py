@@ -133,6 +133,8 @@ def parse_args():
 
     parser_issues.add_argument('--filter', required=False, help='Filter on Redmine fields. Format key=value,nested.key2=value2. Values are interpreted as regular expressions.')
 
+    parser_issues.add_argument('--migrate-version-as-label', required=False, action='store_true', default=False, help='Migrate version as a label instead of a milestone.')
+
     parser_roadmap.add_argument('--filter', required=False, help='Filter on name. Provide a regular expression')
 
     parser_pages.add_argument(
@@ -259,7 +261,7 @@ def perform_migrate_issues(args):
     issues_data = (
         convert_issue(args.redmine_key,
             i, redmine_users_index, gitlab_users_index, milestones_index, closed_states, custom_fields, textile_converter,
-            args.keep_id or args.keep_title, args.sudo, args.archive_acc)
+            args.keep_id or args.keep_title, args.sudo, args.archive_acc, args.migrate_version_as_label)
         for i in issues)
 
     # create issues

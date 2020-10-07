@@ -158,7 +158,8 @@ def custom_fields_to_string(custom_fields, custom_fields_include):
 # Convertor
 
 def convert_issue(redmine_api_key, redmine_issue, redmine_user_index, gitlab_user_index,
-		  gitlab_milestones_index, closed_states, custom_fields_include, textile_converter, keep_title, sudo, archive_acc):
+		  gitlab_milestones_index, closed_states, custom_fields_include, textile_converter, keep_title, sudo, archive_acc,
+          version_as_label):
 
     issue_state = redmine_issue['status']['name']
 
@@ -215,7 +216,7 @@ def convert_issue(redmine_api_key, redmine_issue, redmine_user_index, gitlab_use
     except KeyError:
         if archive_acc is not None:
             author_login = archive_acc
-        else:    
+        else:
             log.warning(
                 'Redmine issue #{} is anonymous, gitlab issue is attributed '
                 'to current admin\n'.format(redmine_issue['id']))
@@ -258,7 +259,10 @@ def convert_issue(redmine_api_key, redmine_issue, redmine_user_index, gitlab_use
 
     version = redmine_issue.get('fixed_version', None)
     if version:
-        if version['name'] in gitlab_milestones_index:
+        if version_as_label:
+            labels.append('version-{}'.format(version['name']))
+            data['labels'] = ','.join(labels)
+        elif version['name'] in gitlab_milestones_index:
             data['milestone_id'] = gitlab_milestones_index[version['name']]['id']
         else:
             print("Milestone {} doesn't exists in GitLab Project but exists in Redmine!".format(version['name']))
@@ -312,7 +316,7 @@ def convert_version(redmine_version):
         )
     else:
         created_on_string = ": created on {}".format(redmine_version['created_on'][:10])
-        
+
     milestone = {
         "title": redmine_version['name'],
         "description": '{}\n\n*(from redmine{})*'.format(
