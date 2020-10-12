@@ -13,7 +13,7 @@ log = logging.getLogger(__name__)
 
 class GitlabClient(APIClient):
     # see http://doc.gitlab.com/ce/api/#pagination
-    MAX_PER_PAGE = 100
+    MAX_PER_PAGE = 20
 
     def get(self, *args, **kwargs):
         kwargs['params'] = kwargs.get('params', {})
