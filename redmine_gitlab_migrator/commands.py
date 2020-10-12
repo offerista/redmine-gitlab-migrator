@@ -288,7 +288,7 @@ def perform_migrate_issues(args):
                 try:
                     fake_meta = {'uploads': [], 'notes': [], 'must_close': False}
                     if args.sudo:
-                        fake_meta['sudo_user'] = meta['sudo_user']
+                        fake_meta['sudo_user'] = args.archive_acc
                     while redmine_id > last_iid + 1:
                         created = gitlab_project.create_issue({'title': 'fake'}, fake_meta, gitlab.get_auth_headers())
                         last_iid = created['iid']
