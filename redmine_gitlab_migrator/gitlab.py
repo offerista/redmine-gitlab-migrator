@@ -167,17 +167,20 @@ class GitlabProject(Project):
             headers['SUDO'] = meta['sudo_user']
         issues_url = '{}/issues'.format(self.api_url)
         issue = None
-        try:
-            issue = self.api.post(
-                issues_url, data=data, headers=headers)
-        except requests.exceptions.HTTPError as e:
-            if data.get('assignee_id') is not None:
-                del data['assignee_id']
+        retry = 3
+        while True:
+            try:
                 issue = self.api.post(
                     issues_url, data=data, headers=headers)
-            else:
-                log.error("Can't convert issue due to error: {}".format(e.response.content))
-                exit()
+                break
+            except requests.exceptions.HTTPError as e:
+                if data.get('assignee_id') is not None:
+                    del data['assignee_id']
+                elif retry > 0:
+                    retry -= 1
+                else:
+                    log.error("Can't convert issue due to error: {}".format(e.response.content))
+                    exit()
 
         issue_url = '{}/{}'.format(issues_url, issue['iid'])
 
@@ -211,10 +214,23 @@ class GitlabProject(Project):
 
     def delete_issue(self, iid):
         issue_url = '{}/issues/{}'.format(self.api_url, iid)
-        try:
-            self.api.delete(issue_url)
-        except JSONDecodeError:
-            True
+        retry = 3
+        while True:
+            try:
+                self.api.delete(issue_url)
+            except requests.exceptions.HTTPError as e:
+                if e.response.status_code == 404: # Previous attempt likely succeeded, but we didn't receive the response
+                    pass
+                elif retry > 0:
+                    retry -= 1
+                    continue
+                else:
+                    log.error("Can't convert issue due to error: {}".format(e.response.content))
+                    exit()
+            except JSONDecodeError:
+                pass
+
+            break
 
     def create_milestone(self, data, meta):
         """ High-level milestone creation
